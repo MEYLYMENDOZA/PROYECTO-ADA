@@ -1,6 +1,11 @@
 import pandas as pd
 from geopy.distance import geodesic
 import folium
+import streamlit as st
+from streamlit_folium import st_folium  # ✅ NECESARIO para mostrar el mapa
+
+st.title("✅ Mapa de WiFi gratuito")
+st.write("La aplicación se ha cargado correctamente.")
 
 # Leer archivos
 df_distritos = pd.read_csv("distritos.csv")
@@ -34,6 +39,6 @@ conectar_puntos(df_victoria)
 df_lurigancho.apply(lambda row: folium.Marker([row.latitud, row.longitud], popup=row.nombre_lugar).add_to(m), axis=1)
 conectar_puntos(df_lurigancho)
 
-# Guardar mapa
-m.save("Mapa de distritos con Acceso de red gratuito.html")
-print("✅ Mapa de distritos con acesso de wifi gratuito")
+# Mostrar el mapa en la app Streamlit ✅
+st_folium(m, width=800, height=600)
+
