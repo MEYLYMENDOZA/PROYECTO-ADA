@@ -2,23 +2,26 @@ import pandas as pd
 from geopy.distance import geodesic
 import folium
 import streamlit as st
-from streamlit_folium import st_folium  # ✅ NECESARIO para mostrar el mapa
+from streamlit_folium import st_folium  # ✅ Necesario para mostrar el mapa en Streamlit
 
-st.title("✅ Mapa de WiFi gratuito")
-st.write("La aplicación se ha cargado correctamente.")
+st.set_page_config(page_title="Mapa WiFi Gratuito", layout="centered")
+st.title("📡 Mapa de Acceso Gratuito a Internet por Distrito")
 
-# Leer archivos
-df_distritos = pd.read_csv("distritos.csv")
+# Leer archivos CSV
 df_victoria = pd.read_csv("la_victoria.csv")
 df_lurigancho = pd.read_csv("san_juan_de_lurigancho.csv")
 
-# Unir los puntos de ambos distritos
+# Limpiar datos vacíos
+df_victoria.dropna(subset=["latitud", "longitud"], inplace=True)
+df_lurigancho.dropna(subset=["latitud", "longitud"], inplace=True)
+
+# Unir todos los puntos
 df_puntos = pd.concat([df_victoria, df_lurigancho])
 
-# Crear mapa centrado en promedio de todos los puntos
+# Crear mapa centrado en promedio de latitud/longitud
 m = folium.Map(location=[df_puntos.latitud.mean(), df_puntos.longitud.mean()], zoom_start=12)
 
-# Función para conectar puntos dentro de un mismo distrito
+# Función para conectar puntos cercanos
 def conectar_puntos(df):
     lugares = df[["nombre_lugar", "latitud", "longitud"]].values
     for i, (n1, lat1, lon1) in enumerate(lugares):
@@ -39,6 +42,6 @@ conectar_puntos(df_victoria)
 df_lurigancho.apply(lambda row: folium.Marker([row.latitud, row.longitud], popup=row.nombre_lugar).add_to(m), axis=1)
 conectar_puntos(df_lurigancho)
 
-# Mostrar el mapa en la app Streamlit ✅
+# Mostrar el mapa dentro de Streamlit
+st.markdown("### 🌐 Mapa interactivo")
 st_folium(m, width=800, height=600)
-
