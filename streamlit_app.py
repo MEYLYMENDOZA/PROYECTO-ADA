@@ -12,7 +12,7 @@ st.markdown("<h1 style='text-align: center; color: #0073e6;'>Mapa de Acceso Grat
 st.markdown("<h3 style='text-align: center; color: #0066cc;'>Visualiza los puntos de acceso WiFi en tu distrito</h3>", unsafe_allow_html=True)
 
 # Menú desplegable para seleccionar el distrito
-opcion = st.selectbox("Selecciona qué distrito mostrar:", ["Ambos", "La Victoria", "San Juan de Lurigancho"])
+opcion = st.selectbox("Selecciona qué distrito mostrar:", ["La Victoria", "San Juan de Lurigancho"])
 
 # Cargar los archivos
 df_victoria = pd.read_csv("la_victoria.csv")
@@ -25,10 +25,12 @@ df_lurigancho.dropna(subset=["latitud", "longitud"], inplace=True)
 # Seleccionar qué puntos mostrar según el menú
 if opcion == "La Victoria":
     df_puntos = df_victoria
+    color = "blue"
+    distrito = "La Victoria"
 elif opcion == "San Juan de Lurigancho":
     df_puntos = df_lurigancho
-else:
-    df_puntos = pd.concat([df_victoria, df_lurigancho])
+    color = "green"
+    distrito = "San Juan de Lurigancho"
 
 # Crear el mapa centrado en el promedio de latitud y longitud
 m = folium.Map(location=[df_puntos.latitud.mean(), df_puntos.longitud.mean()], zoom_start=12, control_scale=True)
@@ -51,24 +53,20 @@ def marcador_estilo(distrito, nombre):
     return f"{distrito} - {nombre}"
 
 # Agregar marcadores y líneas según la opción seleccionada
-if opcion in ["Ambos", "La Victoria"]:
-    df_victoria.apply(lambda row: folium.Marker([row.latitud, row.longitud], 
-                                               popup=marcador_estilo("La Victoria", row.nombre_lugar), 
-                                               icon=folium.Icon(color="blue")).add_to(m), axis=1)
-    conectar_puntos(df_victoria, color="blue")
+df_puntos.apply(lambda row: folium.Marker(
+    [row.latitud, row.longitud], 
+    popup=marcador_estilo(distrito, row.nombre_lugar), 
+    icon=folium.Icon(color=color)).add_to(m), axis=1)
 
-if opcion in ["Ambos", "San Juan de Lurigancho"]:
-    df_lurigancho.apply(lambda row: folium.Marker([row.latitud, row.longitud], 
-                                                  popup=marcador_estilo("San Juan de Lurigancho", row.nombre_lugar), 
-                                                  icon=folium.Icon(color="green")).add_to(m), axis=1)
-    conectar_puntos(df_lurigancho, color="green")
+# Conectar puntos con líneas
+conectar_puntos(df_puntos, color)
 
 # Mostrar el mapa interactivo
 st.markdown("### 🌍 Mapa interactivo")
 st_folium(m, width=800, height=600)
 
 # Botón de descarga de CSV
-@st.cache
+@st.cache_data
 def convert_df(df):
     return df.to_csv(index=False).encode('utf-8')
 
@@ -76,7 +74,7 @@ csv = convert_df(df_puntos)
 st.download_button(
     label="Descargar datos como CSV",
     data=csv,
-    file_name='datos_wifi.csv',
+    file_name=f'datos_wifi_{distrito.replace(" ", "_")}.csv',
     mime='text/csv',
     use_container_width=True
 )
